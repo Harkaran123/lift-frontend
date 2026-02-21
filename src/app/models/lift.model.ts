@@ -18,7 +18,6 @@ export interface Lift {
   maintenanceInterval: number;
   nextMaintenanceDate?: string;
   reminderSettings?: ReminderSetting[];
-  alertEmails?: string[];
 }
 
 export interface ReminderSetting {

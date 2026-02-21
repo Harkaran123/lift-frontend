@@ -31,4 +31,8 @@ export class LiftService {
   deleteLift(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
+
+  sendMaintenanceEmail(id: number): Observable<{success: boolean, message: string, recipientsNotified: number}> {
+    return this.http.post<{success: boolean, message: string, recipientsNotified: number}>(`${this.apiUrl}/${id}/send-maintenance-email`, {});
+  }
 }

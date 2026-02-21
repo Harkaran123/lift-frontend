@@ -11,8 +11,14 @@ import { Lift, ReminderSetting } from '../../models/lift.model';
       <div class="header-actions">
         <button class="btn btn-secondary" (click)="goBack()">Back to List</button>
         <div class="header-actions-right">
+          <button class="btn btn-email" (click)="sendMaintenanceEmail()" [disabled]="isSendingEmail">
+            {{ isSendingEmail ? 'Sending...' : 'Send Maintenance Email' }}
+          </button>
           <button class="btn btn-edit" (click)="editLift()">Edit Lift</button>
           <button class="btn btn-delete" (click)="deleteLift()">Delete Lift</button>
+        </div>
+        <div *ngIf="emailResult" class="email-result" [class.success]="emailResult.success" [class.error]="!emailResult.success">
+          {{ emailResult.message }}
         </div>
       </div>
       
@@ -120,6 +126,27 @@ import { Lift, ReminderSetting } from '../../models/lift.model';
       background-color: #f44336;
       color: white;
     }
+    .btn-email {
+      background-color: #4caf50;
+      color: white;
+    }
+    .email-result {
+      margin-top: 0.5rem;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      text-align: center;
+    }
+    .email-result.success {
+      background-color: #e8f5e9;
+      color: #2e7d32;
+      border: 1px solid #4caf50;
+    }
+    .email-result.error {
+      background-color: #ffebee;
+      color: #c62828;
+      border: 1px solid #f44336;
+    }
     .btn-sm {
       padding: 0.25rem 0.5rem;
       font-size: 0.8rem;
@@ -201,6 +228,8 @@ import { Lift, ReminderSetting } from '../../models/lift.model';
 export class LiftDetailComponent implements OnInit {
   lift?: Lift;
   reminders: ReminderSetting[] = [];
+  isSendingEmail: boolean = false;
+  emailResult: {success: boolean, message: string} | null = null;
 
   constructor(
     private liftService: LiftService,
@@ -250,5 +279,31 @@ export class LiftDetailComponent implements OnInit {
 
   goBack(): void {
     this.router.navigate(['/lifts']);
+  }
+
+  sendMaintenanceEmail(): void {
+    if (!this.lift?.id) return;
+    
+    this.isSendingEmail = true;
+    this.emailResult = null;
+    
+    this.liftService.sendMaintenanceEmail(this.lift.id).subscribe({
+      next: (result: {success: boolean, message: string, recipientsNotified: number}) => {
+        this.isSendingEmail = false;
+        this.emailResult = result;
+        // Clear success message after 5 seconds
+        if (result.success) {
+          setTimeout(() => this.emailResult = null, 5000);
+        }
+      },
+      error: (err: any) => {
+        this.isSendingEmail = false;
+        this.emailResult = {
+          success: false,
+          message: 'Failed to send email. Please check your connection and try again.'
+        };
+        console.error('Error sending maintenance email:', err);
+      }
+    });
   }
 }
