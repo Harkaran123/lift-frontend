@@ -3,12 +3,13 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { BehaviorSubject, Observable, throwError } from 'rxjs';
 import { tap, catchError } from 'rxjs/operators';
 import { LoginRequest, LoginResponse, UserProfile, ProfileUpdateRequest, ChangePasswordRequest } from '../models/auth.model';
+import { environment } from 'src/environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = 'http://localhost:8080/api/auth';
+  private apiUrl = `${environment.apiBaseUrl}/auth`;
   private tokenKey = 'lift_token';
   private currentUserSubject: BehaviorSubject<string | null>;
   public currentUser: Observable<string | null>;

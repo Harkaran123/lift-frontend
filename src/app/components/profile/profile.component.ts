@@ -1,7 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { RecoveryService } from '../../services/recovery.service';
 import { UserProfile, ProfileUpdateRequest, ChangePasswordRequest } from '../../models/auth.model';
+import { EmailVerificationRequest, VerifyOtpRequest } from '../../models/recovery.model';
 
 @Component({
   selector: 'app-profile',
@@ -45,13 +47,50 @@ import { UserProfile, ProfileUpdateRequest, ChangePasswordRequest } from '../../
           </div>
           <div class="form-group">
             <label for="email">Email</label>
-            <input
-              type="email"
-              id="email"
-              [(ngModel)]="profileUpdate.email"
-              name="email"
-              required
-            />
+            <div class="email-section">
+              <input
+                type="email"
+                id="email"
+                [(ngModel)]="profileUpdate.email"
+                name="email"
+                required
+                [disabled]="isEmailVerified && emailChanged"
+                (ngModelChange)="onEmailChange()"
+              />
+              <button 
+                type="button" 
+                class="btn-verify" 
+                (click)="sendVerificationOtp()"
+                [disabled]="isSendingOtp || !profileUpdate.email"
+                *ngIf="emailChanged && !isEmailVerified"
+              >
+                {{ isSendingOtp ? 'Sending...' : 'Send OTP' }}
+              </button>
+            </div>
+            <span class="verified-badge" *ngIf="isEmailVerified && emailChanged">✓ Verified</span>
+          </div>
+
+          <!-- OTP Verification Section -->
+          <div class="otp-section" *ngIf="otpSent && !isEmailVerified">
+            <div class="form-group">
+              <label for="otpCode">Enter Verification Code</label>
+              <input
+                type="text"
+                id="otpCode"
+                [(ngModel)]="otpCode"
+                name="otpCode"
+                maxlength="6"
+                placeholder="Enter 6-digit code"
+              />
+            </div>
+            <button 
+              type="button" 
+              class="btn-confirm" 
+              (click)="verifyOtp()"
+              [disabled]="isVerifyingOtp || !otpCode"
+            >
+              {{ isVerifyingOtp ? 'Verifying...' : 'Verify Email' }}
+            </button>
           </div>
           <div class="form-group">
             <label for="phoneNumber">Phone Number</label>
@@ -216,6 +255,58 @@ import { UserProfile, ProfileUpdateRequest, ChangePasswordRequest } from '../../
       background-color: #999;
       cursor: not-allowed;
     }
+    .email-section {
+      display: flex;
+      gap: 0.5rem;
+    }
+    .email-section input {
+      flex: 1;
+    }
+    .btn-verify {
+      padding: 0.75rem 1rem;
+      background-color: #6B6CD1;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .btn-verify:hover:not(:disabled) {
+      background-color: #5a5ab8;
+    }
+    .btn-verify:disabled {
+      background-color: #999;
+      cursor: not-allowed;
+    }
+    .verified-badge {
+      color: #28a745;
+      font-size: 0.875rem;
+      margin-top: 0.25rem;
+      display: block;
+    }
+    .otp-section {
+      background-color: #f8f9fa;
+      padding: 1rem;
+      border-radius: 4px;
+      margin-bottom: 1rem;
+    }
+    .btn-confirm {
+      width: 100%;
+      padding: 0.75rem;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    .btn-confirm:hover:not(:disabled) {
+      background-color: #218838;
+    }
+    .btn-confirm:disabled {
+      background-color: #999;
+      cursor: not-allowed;
+    }
     .message {
       padding: 0.75rem;
       border-radius: 4px;
@@ -246,6 +337,14 @@ export class ProfileComponent implements OnInit {
   };
   confirmPassword: string = '';
 
+  // Email verification properties
+  originalEmail: string = '';
+  otpCode: string = '';
+  otpSent: boolean = false;
+  isEmailVerified: boolean = false;
+  isSendingOtp: boolean = false;
+  isVerifyingOtp: boolean = false;
+
   activeTab: 'profile' | 'password' = 'profile';
 
   profileMessage: string = '';
@@ -258,11 +357,86 @@ export class ProfileComponent implements OnInit {
 
   constructor(
     private authService: AuthService,
+    private recoveryService: RecoveryService,
     private router: Router
   ) {}
 
   ngOnInit(): void {
     this.loadProfile();
+  }
+
+  get emailChanged(): boolean {
+    return this.profileUpdate.email !== this.originalEmail;
+  }
+
+  onEmailChange(): void {
+    // Reset verification when email changes
+    if (this.profileUpdate.email !== this.originalEmail) {
+      this.otpSent = false;
+      this.isEmailVerified = false;
+      this.otpCode = '';
+    }
+  }
+
+  resetVerification(): void {
+    this.otpCode = '';
+    this.otpSent = false;
+    this.isEmailVerified = false;
+  }
+
+  sendVerificationOtp(): void {
+    if (!this.profileUpdate.email) {
+      this.profileError = 'Please enter an email address';
+      return;
+    }
+
+    this.isSendingOtp = true;
+    this.profileMessage = '';
+    this.profileError = '';
+
+    const request: EmailVerificationRequest = {
+      email: this.profileUpdate.email
+    };
+
+    this.recoveryService.sendVerificationOtp(request).subscribe({
+      next: (response) => {
+        this.isSendingOtp = false;
+        this.otpSent = true;
+        this.profileMessage = 'Verification code sent to your email. Please check your inbox.';
+      },
+      error: (error) => {
+        this.isSendingOtp = false;
+        this.profileError = error.error?.error || 'Failed to send verification code';
+      }
+    });
+  }
+
+  verifyOtp(): void {
+    if (!this.otpCode || this.otpCode.length !== 6) {
+      this.profileError = 'Please enter a valid 6-digit verification code';
+      return;
+    }
+
+    this.isVerifyingOtp = true;
+    this.profileMessage = '';
+    this.profileError = '';
+
+    const request: VerifyOtpRequest = {
+      email: this.profileUpdate.email,
+      otpCode: this.otpCode
+    };
+
+    this.recoveryService.verifyEmailOtp(request).subscribe({
+      next: (response) => {
+        this.isVerifyingOtp = false;
+        this.isEmailVerified = true;
+        this.profileMessage = 'Email verified successfully! You can now update your profile.';
+      },
+      error: (error) => {
+        this.isVerifyingOtp = false;
+        this.profileError = error.error?.error || 'Invalid or expired verification code';
+      }
+    });
   }
 
   loadProfile(): void {
@@ -274,6 +448,8 @@ export class ProfileComponent implements OnInit {
           email: profile.email,
           phoneNumber: profile.phoneNumber || ''
         };
+        this.originalEmail = profile.email;
+        this.resetVerification();
       },
       error: (error) => {
         this.profileError = 'Failed to load profile';
@@ -285,6 +461,12 @@ export class ProfileComponent implements OnInit {
   }
 
   updateProfile(): void {
+    // Check if email changed but not verified
+    if (this.emailChanged && !this.isEmailVerified) {
+      this.profileError = 'Please verify your new email address before updating';
+      return;
+    }
+
     this.profileMessage = '';
     this.profileError = '';
     this.isUpdatingProfile = true;
@@ -296,6 +478,8 @@ export class ProfileComponent implements OnInit {
         if (response.newToken) {
           this.profileMessage += '. Please note your username has been changed.';
         }
+        this.originalEmail = this.profileUpdate.email;
+        this.resetVerification();
         this.loadProfile();
       },
       error: (error) => {

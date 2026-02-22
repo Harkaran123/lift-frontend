@@ -14,9 +14,13 @@ export class JwtInterceptor implements HttpInterceptor {
   ) {}
 
   intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-    // Add auth header with JWT token if available
+    // Skip adding token for public auth endpoints
+    const publicUrls = ['/api/auth/login', '/api/auth/forgot-password'];
+    const isPublicUrl = publicUrls.some(url => request.url.includes(url));
+
+    // Add auth header with JWT token if available and not a public URL
     const token = this.authService.getToken();
-    if (token) {
+    if (token && !isPublicUrl) {
       request = request.clone({
         setHeaders: {
           Authorization: `Bearer ${token}`

@@ -7,11 +7,13 @@ import { AlertRecipientListComponent } from './components/alert-recipient-list/a
 import { AlertRecipientFormComponent } from './components/alert-recipient-form/alert-recipient-form.component';
 import { LoginComponent } from './components/login/login.component';
 import { ProfileComponent } from './components/profile/profile.component';
+import { ForgotPasswordComponent } from './components/forgot-password/forgot-password.component';
 import { AuthGuard } from './guards/auth.guard';
 
 const routes: Routes = [
   { path: '', redirectTo: '/lifts', pathMatch: 'full' },
   { path: 'login', component: LoginComponent },
+  { path: 'forgot-password', component: ForgotPasswordComponent },
   { path: 'profile', component: ProfileComponent, canActivate: [AuthGuard] },
   { path: 'lifts', component: LiftListComponent, canActivate: [AuthGuard] },
   { path: 'lifts/new', component: LiftFormComponent, canActivate: [AuthGuard] },

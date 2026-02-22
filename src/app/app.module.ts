@@ -12,6 +12,7 @@ import { AlertRecipientListComponent } from './components/alert-recipient-list/a
 import { AlertRecipientFormComponent } from './components/alert-recipient-form/alert-recipient-form.component';
 import { LoginComponent } from './components/login/login.component';
 import { ProfileComponent } from './components/profile/profile.component';
+import { ForgotPasswordComponent } from './components/forgot-password/forgot-password.component';
 import { JwtInterceptor } from './interceptors/jwt.interceptor';
 
 @NgModule({
@@ -23,7 +24,8 @@ import { JwtInterceptor } from './interceptors/jwt.interceptor';
     AlertRecipientListComponent,
     AlertRecipientFormComponent,
     LoginComponent,
-    ProfileComponent
+    ProfileComponent,
+    ForgotPasswordComponent
   ],
   imports: [
     BrowserModule,

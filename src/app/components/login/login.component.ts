@@ -40,9 +40,12 @@ import { LoginRequest } from '../../models/auth.model';
             {{ isLoading ? 'Logging in...' : 'Login' }}
           </button>
         </form>
-        <div class="info-text">
-          <p>Default credentials: admin / admin123</p>
+        <div class="forgot-link">
+          <a routerLink="/forgot-password">Forgot Password / Email?</a>
         </div>
+        <!-- <div class="info-text">
+          <p>Default credentials: admin / admin123</p>
+        </div> -->
       </div>
     </div>
   `,
@@ -125,6 +128,18 @@ import { LoginRequest } from '../../models/auth.model';
     }
     .info-text p {
       margin: 0;
+    }
+    .forgot-link {
+      margin-top: 1rem;
+      text-align: center;
+    }
+    .forgot-link a {
+      color: #6B6CD1;
+      text-decoration: none;
+      font-size: 0.875rem;
+    }
+    .forgot-link a:hover {
+      text-decoration: underline;
     }
   `]
 })
