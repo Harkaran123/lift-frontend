@@ -1,10 +1,13 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Router } from '@angular/router';
+import { AuthService } from './services/auth.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-root',
   template: `
     <div class="app-container">
-      <nav class="navbar">
+      <nav class="navbar" *ngIf="isAuthenticated">
         <div class="nav-brand">
           <h1>Lift Maintenance System</h1>
         </div>
@@ -12,9 +15,11 @@ import { Component } from '@angular/core';
           <li><a routerLink="/lifts" routerLinkActive="active">Lifts</a></li>
           <li><a routerLink="/lifts/new" routerLinkActive="active">Add Lift</a></li>
           <li><a routerLink="/alert-recipients" routerLinkActive="active">Alert Recipients</a></li>
+          <li><a routerLink="/profile" routerLinkActive="active">Profile</a></li>
+          <li><button class="logout-btn" (click)="logout()">Logout</button></li>
         </ul>
       </nav>
-      <main class="main-content">
+      <main class="main-content" [class.full-width]="!isAuthenticated">
         <router-outlet></router-outlet>
       </main>
     </div>
@@ -25,7 +30,7 @@ import { Component } from '@angular/core';
       background-color: #f5f5f5;
     }
     .navbar {
-      background-color: #1976d2;
+      background-color: #6B6CD1;
       color: white;
       padding: 1rem 2rem;
       display: flex;
@@ -42,6 +47,7 @@ import { Component } from '@angular/core';
       display: flex;
       gap: 1.5rem;
       margin: 0;
+      align-items: center;
     }
     .nav-links a {
       color: white;
@@ -54,13 +60,61 @@ import { Component } from '@angular/core';
     .nav-links a.active {
       background-color: rgba(255,255,255,0.2);
     }
+    .logout-btn {
+      background-color: #dc3545;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: background-color 0.3s;
+    }
+    .logout-btn:hover {
+      background-color: #c82333;
+    }
     .main-content {
       padding: 2rem;
       max-width: 1200px;
       margin: 0 auto;
     }
+    .main-content.full-width {
+      max-width: none;
+      padding: 0;
+    }
   `]
 })
-export class AppComponent {
+export class AppComponent implements OnInit, OnDestroy {
   title = 'lift-frontend';
+  isAuthenticated: boolean = false;
+  private authSubscription: Subscription | null = null;
+
+  constructor(
+    private authService: AuthService,
+    private router: Router
+  ) {}
+
+  ngOnInit(): void {
+    this.isAuthenticated = this.authService.isAuthenticated();
+    this.authSubscription = this.authService.currentUser.subscribe(user => {
+      this.isAuthenticated = !!user;
+    });
+  }
+
+  ngOnDestroy(): void {
+    if (this.authSubscription) {
+      this.authSubscription.unsubscribe();
+    }
+  }
+
+  logout(): void {
+    this.authService.logout().subscribe({
+      next: () => {
+        this.router.navigate(['/login']);
+      },
+      error: () => {
+        this.router.navigate(['/login']);
+      }
+    });
+  }
 }

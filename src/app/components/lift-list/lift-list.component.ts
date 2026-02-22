@@ -58,7 +58,7 @@ import { Router } from '@angular/router';
       opacity: 0.9;
     }
     .btn-primary {
-      background-color: #1976d2;
+      background-color: #6B6CD1;
       color: white;
       margin-bottom: 1.5rem;
     }
@@ -95,7 +95,7 @@ import { Router } from '@angular/router';
     }
     .lift-header h3 {
       margin: 0;
-      color: #1976d2;
+      color: #6B6CD1;
     }
     .badge {
       background-color: #4caf50;
